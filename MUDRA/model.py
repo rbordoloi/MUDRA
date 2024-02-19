@@ -1,3 +1,14 @@
+import numpy as np
+import tensorly as tf
+from skfda.representation.basis import BSplineBasis
+from scipy.linalg import solve_sylvester, sqrtm
+from scipy.sparse.linalg import LinearOperator, gmres
+from scipy.special import softmax
+from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
+
+# tf.set_backend('cupy')
+rng = np.random.default_rng()
+
 class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
     def __init__(self, r=2, nBasis=4, SigmaRank = None, PsiRank = None, splineOrder = 3, regularizer=1e-7, n_iter=1000, criterion='bic'):
@@ -14,7 +25,15 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         self.criterion = 'bic'
         super().__init__()
 
-    def preprocess(self, X):
+    def __nearPSD(self, X):
+
+        assert len(X.shape) == 2
+        X = (X + X.T) / 2
+        D, Q = np.linalg.eigh(X)
+        D = np.clip(D, 0, np.inf)
+        return Q @ np.diag(D) @ Q.T
+
+    def __preprocess(self, X):
 
         t = []
         f = []
@@ -115,14 +134,14 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
             for i in range(len(x)):
 #                 SigmaNew += gamma[i] @ np.linalg.lstsq(Psi + self.regularizer * np.eye(self.n_features), gamma[i].T)[0]
                 SigmaNew += gamma[i] @ np.linalg.lstsq(Psi, gamma[i].T, rcond=1)[0]
-            Sigma = nearPSD(SigmaNew / f)
-#             Sigma = nearPSD(Sigma) / Sigma[0,0]
+            Sigma = self.__nearPSD(SigmaNew / f)
+#             Sigma = self.__nearPSD(Sigma) / Sigma[0,0]
 
             for i in range(len(x)):
 #                 PsiNew += gamma[i].T @ np.linalg.lstsq(Sigma + self.regularizer * np.eye(self.nBasis), gamma[i])[0]
                 PsiNew += gamma[i].T @ np.linalg.lstsq(Sigma, gamma[i], rcond=1)[0]
-            Psi = nearPSD(PsiNew / t)
-#             Psi = nearPSD(Psi) / Psi[0,0]
+            Psi = self.__nearPSD(PsiNew / t)
+#             Psi = self.__nearPSD(Psi) / Psi[0,0]
 
 #             num = 0
 #             for i in range(len(X)):
@@ -146,7 +165,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
     def fit(self, X, y):
 
-        t, f, x = self.preprocess(X)
+        t, f, x = self.__preprocess(X)
 
         #Initialize all parameters
         self.features_ = np.unique(np.concatenate(f))
@@ -252,7 +271,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
     #Compute a low-dimensional representation of new data
     def transform(self, X):
 
-        t, f, x = self.preprocess(X)
+        t, f, x = self.__preprocess(X)
         Y = np.zeros((len(X), self.r * self.r)) #target low dimension matrix
 
         #Compute the variance parameters
@@ -281,7 +300,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
             M = self.sigma2_ * np.eye(t[i].shape[0] * f[i].shape[0]) + np.kron(PsiPrime, SigmaPrime)
             A = np.kron(C.T @ self.xi_.T, S @ self.Lambda_)
             var = A.T @ np.linalg.lstsq(M, A, rcond=None)[0]
-            alpha = np.linalg.lstsq(matSqrt(var), centeredX.T.flatten(), rcond=None)[0]
+            alpha = np.linalg.lstsq(sqrtm(var), centeredX.T.flatten(), rcond=None)[0]
             Y[i] = alpha
 #             Y[i] = np.diag(alpha.reshape(self.r, self.r).T) #Add it to Y
 
@@ -297,7 +316,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
         #Compute partial log likelihood for new data
 
-        t, f, x = self.preprocess(X)
+        t, f, x = self.__preprocess(X)
         predProbs = np.zeros((len(X), self.n_classes))
         Sigma = self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T
         Psi = self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T
@@ -351,7 +370,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         if self.criterion != 'bic':
             raise NotImplementedError
 
-        t, f, x = self.preprocess(X)
+        t, f, x = self.__preprocess(X)
         for i in range(len(y)):
             y[i] = np.where(y[i] == self.classes_)[0][0]
         l = self.logLikelihood(t, f, x, y)
