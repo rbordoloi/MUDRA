@@ -24,7 +24,7 @@ setup(
     package_dir={'': 'MUDRA'},
     python_require='>=3.8.5',
     install_requires=[
-        'numpy>=1.24.3',
+        'numpy>=1.24.0',
         'scikit-base>=0.6.0',
         'scikit-fda>=0.9',
         'scipy>=1.11.2',

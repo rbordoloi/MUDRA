@@ -40,6 +40,12 @@ x = model.transform(X)
 y = model.predict(X)
 ```
 
+- To predict scores on new data (X):
+
+```python
+y = model.predict_proba(X)
+```
+
 ## Reproduce the results shown in the paper
 
 Please check out the interactive Jupyter notebooks "*synthetic.ipynb*" and "*real.ipynb*". After installing Jupyter Notebook, please run the following commands:
