@@ -9,14 +9,20 @@ git clone https://github.com/SirUnknown2/MUDRA.git
 cd MUDRA/
 python -m pip install --upgrade setuptools
 python -m pip install -r pip/requirements.txt
-python setup.py install
+python setup.py install --user
 ```
 
 ## Example
 
 The class *MUDRA* is defined like a scikit-learn module, that is
 
-- To fit the model on training data (X,y):
+- To import the *MUDRA* class:
+
+```python
+from MUDRA import MUDRA
+```
+
+- To fit the model on training data (X,y) (for r=8, b=9 and 300 iterations for the last optimization step):
 
 ```python
 model = MUDRA(r=8, n_iter=300, nBasis=9).fit(X, y)
@@ -36,9 +42,13 @@ y = model.predict(X)
 
 ## Reproduce the results shown in the paper
 
-Please check out the interactive Jupyter notebook "*FLDA_ECM-Words.ipynb*".
+Please check out the interactive Jupyter notebook "*FLDA_ECM-Words.ipynb*". After installing Jupyter Notebook, please run the following command:
 
-## Citation
+```bash
+jupyter notebook FLDA_ECM-Words.ipynb 
+```
+
+## Citations
 
 If you use *MUDRA* in academic research, please cite it as follows
 
@@ -69,3 +79,5 @@ The citation for the ``Articulary Word Recognition'' data set (available in fold
 }
 
 ```
+
+Original link to the freely available dataset is [here](http://www.timeseriesclassification.com/description.php?Dataset=ArticularyWordRecognition).

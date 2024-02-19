@@ -27,7 +27,10 @@ setup(
         'scikit-base>=0.6.0',
         'scikit-fda>=0.9',
         'scipy>=1.11.2',
-        'tensorly>=0.8.1'
+        'tensorly>=0.8.1',
+        'sktime>=0.26.0',
+        'tqdm==4.40.0',
+        'scikit-learn>=1.4.1',
     ],
     entry_points={}
 )
