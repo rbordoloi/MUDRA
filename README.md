@@ -42,10 +42,11 @@ y = model.predict(X)
 
 ## Reproduce the results shown in the paper
 
-Please check out the interactive Jupyter notebook "*FLDA_ECM-Words.ipynb*". After installing Jupyter Notebook, please run the following command:
+Please check out the interactive Jupyter notebooks "*synthetic.ipynb*" and "*real.ipynb*". After installing Jupyter Notebook, please run the following commands:
 
 ```bash
-jupyter notebook FLDA_ECM-Words.ipynb 
+jupyter notebook real.ipynb
+jupyter notebook synthetic.ipynb 
 ```
 
 ## Citations
