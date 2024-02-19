@@ -13,7 +13,8 @@ setup(
     classifiers=[
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        "Programming Language :: Python :: 3"
     ],
     keywords='',
     description='Multivariate Functional Linear Discriminant Analysis (MUDRA) for the Classification of Short Time Series with Missing Data.',
