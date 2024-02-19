@@ -6,7 +6,7 @@ VERSION = '1.0.0'
 setup(
     name=NAME,
     version=VERSION,
-    autho='Rahul Bordoloi',
+    author='Rahul Bordoloi',
     author_email='rahul.bordoloi@uni-rostock.com',
     url='https://github.com/SirUnknown2/MUDRA',
     license_file = ('LICENSE'),
@@ -16,12 +16,12 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'
     ],
     keywords='',
-    description='Multivariate fUnctional linear DiscRiminant Analysis',
+    description='Multivariate Functional Linear Discriminant Analysis (MUDRA) for the Classification of Short Time Series with Missing Data.',
     long_desciption=open('README.md').read(),
     long_description_content_type='text/markdown',
     packages=find_packages(where='MUDRA'),
     package_dir={'': 'MUDRA'},
-    python_require='>3.8.5',
+    python_require='>=3.8.5',
     install_requires=[
         'numpy>=1.24.3',
         'scikit-base>=0.6.0',
