@@ -1,4 +1,4 @@
-# Code Source for the Paper "Multivariate Functional Linear Discriminant Analysis (MUDRA) for the Classification of Short Time Series with Missing Data"
+# Source Code for the Paper "Multivariate Functional Linear Discriminant Analysis (MUDRA) for the Classification of Short Time Series with Missing Data"
 
 ## Installation
 
@@ -62,12 +62,14 @@ jupyter notebook synthetic.ipynb
 If you use *MUDRA* in academic research, please cite it as follows
 
 ```
-@unpublished{Bordoloi2024, 
-    year = {2024}, 
-    note = {Under review}, 
-    author = {Rahul Bordoloi, Clémence Réda, Orell Trautmann, Saptarshi Bej and Olaf Wolkenhauer}, 
-    title = {Multivariate Functional Linear Discriminant Analysis (MUDRA) for the Classification of Short Time Series with Missing Data}, 
-} 
+@misc{bordoloi2024multivariate,
+      title={Multivariate Functional Linear Discriminant Analysis for the Classification of Short Time Series with Missing Data}, 
+      author={Rahul Bordoloi and Clémence Réda and Orell Trautmann and Saptarshi Bej and Olaf Wolkenhauer},
+      year={2024},
+      eprint={2402.13103},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
 
 ```
 
