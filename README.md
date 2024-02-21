@@ -22,6 +22,8 @@ The class *MUDRA* is defined like a scikit-learn module, that is
 from MUDRA import MUDRA
 ```
 
+The model accepts input X as a list of matrices and y as list of targets. Each matrix in X has shape $(T_{ij}+1)\times (F_{ij}+1)$. The first column is the list of time points at which data was recorded for that sample, and the first row is the list of recorded features.
+
 - To fit the model on training data (X,y) (for r=8, b=9 and 300 iterations for the last optimization step):
 
 ```python
