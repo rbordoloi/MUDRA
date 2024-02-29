@@ -5,7 +5,7 @@
 We advise to use a virtual environment, either with Conda or VirtualEnv. Then run the following command:
 
 ```bash
-git clone https://github.com/SirUnknown2/MUDRA.git
+git clone https://github.com/rbordoloi/MUDRA.git
 cd MUDRA/
 python -m pip install --upgrade setuptools
 python -m pip install -r pip/requirements.txt
