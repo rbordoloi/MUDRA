@@ -8,7 +8,7 @@ setup(
     version=VERSION,
     author='Rahul Bordoloi',
     author_email='rahul.bordoloi@uni-rostock.com',
-    url='https://github.com/SirUnknown2/MUDRA',
+    url='https://github.com/rbordoloi/MUDRA',
     license_file = ('LICENSE'),
     classifiers=[
         'Intended Audience :: Science/Research',
