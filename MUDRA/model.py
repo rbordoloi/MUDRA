@@ -190,6 +190,11 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
         y : array-like of shape (n_samples,)
             Target values
+
+        Returns
+        -------
+        model : object of class `MUDRA.MUDRA`
+                returns the fitted model
         '''
 
         t, f, x = self.__preprocess(X)
@@ -304,11 +309,16 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
         Parameters
         ----------
-        xs : 1D array
+        xs : array-like of shape (tPoints,)
              List of points at which to evaluate the functionals
 
         className : float, int or str
                     Name of the class for which to evaluate the functional
+
+        Returns
+        -------
+        y : array-like of shape (tPoints, n_features)
+            values of the multivariate functional evaluated on the time points in `xs`
         '''
 
         classIdx = np.where(self.classes_==className)[0][0]
@@ -329,7 +339,13 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
         Parameters
         ----------
+        X : pandas DataFrame of shape (n_samples, n_features), where each element is a pandas Series indexed with the corresponding timepoints.
+            Input samples to transform.
 
+        Returns
+        -------
+        T : array-like of shape (n_samples, r*r)
+            returns the r^2-dimensional representation of the input data obtained via MUDRA
         '''
 
         t, f, x = self.__preprocess(X)
@@ -368,12 +384,48 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         return Y
 
     def fit_transform(self, X, y):
+        '''
+        Fit to data and then transform the data.
+
+        State change:
+            Change state to "fitted"
+
+        Fits the transformer to `X`  and `y`, transforms `X` to its low-dimensional representation, and returns the low-dimensional representation of `X`.
+
+        Parameters
+        ----------
+        X : pandas DataFrame of shape (n_samples, n_features), where each element is a pandas Series indexed with the corresponding timepoints.
+            Input samples to fit and transform.
+
+        y : array-like of shape (n_samples,)
+            Target values
+
+        Returns
+        -------
+        T : array-like of shape (n_samples, r*r)
+            returns the r^2-dimensional representation of the input data obtained via MUDRA
+        '''
 
         #Fit on new data and then transform
         self.fit(X, y)
         return self.transform(X)
 
     def predict_log_proba(self, X):
+        '''
+        Predict the logarithm of probability estimates for the Bayes optimal classifier.
+
+        The returned estimates for all classes are ordered by the label of classes.
+
+        Parameters
+        ----------
+        X : pandas DataFrame of shape (n_samples, n_features), where each element is a pandas Series indexed with the corresponding timepoints.
+            Input samples.
+
+        Returns
+        -------
+        T : array-like of shape (n_samples, n_classes)
+            returns the log probability of the sammple for each class in the model, where the classes are ordered as they are in `self.classes_`
+        '''
 
         #Compute partial log likelihood for new data
 
@@ -413,6 +465,21 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         return predProbs
 
     def predict_proba(self, X):
+        '''
+        Predict the probability estimates for the Bayes optimal classifier.
+
+        The returned estimates for all classes are ordered by the label of classes.
+
+        Parameters
+        ----------
+        X : pandas DataFrame of shape (n_samples, n_features), where each element is a pandas Series indexed with the corresponding timepoints.
+            Input samples.
+
+        Returns
+        -------
+        T : array-like of shape (n_samples, n_classes)
+            returns the log probability of the sammple for each class in the model, where the classes are ordered as they are in ``self.classes_``
+        '''
 
         #Compute the actual class likelihoods
         #This is done be getting the partial log-likelihoods and applying a softmax to normalize
@@ -421,12 +488,41 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         return softmax(logProbs, axis=1)
 
     def predict(self, X):
+        '''
+        Classify new data.
+
+        Parameters
+        ----------
+        X : pandas DataFrame of shape (n_samples, n_features), where each element is a pandas Series indexed with the corresponding timepoints.
+            Input samples.
+
+        Returns
+        -------
+        T : array-like of shape (n_samples,)
+            returns the predicted class assigned to each one of the samples
+        '''
 
         NegLogProbs = -self.predict_log_proba(X) #Get partial log likelihoods
         classIdx = np.argmin(NegLogProbs, axis=1) #Choose class with maximum log likelihood
         return self.classes_[classIdx]
 
     def ic(self, X, y):
+        '''
+        Compute the chosen type of Information Criterion
+
+        Parameters
+        ----------
+        X : pandas DataFrame of shape (n_samples, n_features), where each element is a pandas Series indexed with the corresponding timepoints.
+            Input samples to fit and transform.
+
+        y : array-like of shape (n_samples,)
+            Target values
+
+        Returns
+        -------
+        r : float
+            value of the Information criterion for the given inputs-
+        '''
 
         if self.criterion != 'bic':
             raise NotImplementedError('Only Bayesian Information Criterion has been implemented')

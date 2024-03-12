@@ -7,8 +7,11 @@ We advise to use a virtual environment, either with Conda or VirtualEnv. Then ru
 ```bash
 git clone https://github.com/rbordoloi/MUDRA.git
 cd MUDRA/
+# If using pip
 python -m pip install --upgrade setuptools
 python -m pip install -r pip/requirements.txt
+# If using conda
+cond env create --name mudra --file=environment.yml
 python setup.py install --user
 ```
 
@@ -22,7 +25,7 @@ The class *MUDRA* is defined like a scikit-learn module, that is
 from MUDRA import MUDRA
 ```
 
-The model accepts input `X` as a list of matrices and `y` as list of class labels. Each matrix in `X` has shape $(T_{ij}+1)\times (F_{ij}+1)$. The first column is the list of time points at which data was recorded for that sample, and the first row is the list of recorded features.
+The model accepts input `X` as a pandas DataFrame of shape `(n_samples, n_features)` and `y` as list of class labels. Each 
 
 - To fit the model on training data (X,y) (for r=8, b=9 and 300 iterations for the last optimization step):
 
