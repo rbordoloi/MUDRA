@@ -32,6 +32,7 @@ setup(
         'sktime>=0.26.0',
         'tqdm==4.40.0',
         'scikit-learn>=1.4.1',
+        'pandas>=2.1.4'
     ],
     entry_points={}
 )

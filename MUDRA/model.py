@@ -11,6 +11,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 import numpy as np
 import tensorly as tf
+from pandas import DataFrame
 from skfda.representation.basis import BSplineBasis
 from scipy.linalg import solve_sylvester, sqrtm
 from scipy.sparse.linalg import LinearOperator, gmres
@@ -46,20 +47,19 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
     def __preprocess(self, X):
 
-        t = []
-        f = []
-        x = []
-        for i in range(len(X)):
-            t.append(X[i][1:, 0])
-            f.append(X[i][0, 1:])
-            x.append(X[i][1:,1:])
+        t, f, x = [], [], []
+        for row in X.iterrows():
+            currX = DataFrame(row[1].dropna().to_dict())
+            t.append(currX.index.to_numpy())
+            f.append(currX.columns.to_numpy())
+            x.append(currX.to_numpy())
 #                 t.append(X[i][1:, 0].get())
 #                 f.append(X[i][0, 1:].get())
 #                 x.append(X[i][1:,1:].get())
 
         return t, f, x
 
-    def Estep(self, x, y, S, C):
+    def __Estep(self, x, y, S, C):
 
         #Takes one sample and performs the E-Step for that sample to compute the corresponding gamma'
 
@@ -77,7 +77,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
 
     # Compute the parameters lambda0, Lambda, alpha, xi
-    def MStepLinear(self, x, y, m, gammaPrime, S, C):
+    def __MStepLinear(self, x, y, m, gammaPrime, S, C):
 
         #Define LHS of first equation as a function instead of a matrix multiply. This allows us to use GMRES
         #and solve the matrix equation without a large matrix inversion
@@ -114,7 +114,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         return lambda0, Lambda, alpha, xi.T
 
     #Compute parameters Sigma, Psi. sigma2
-    def MStepVar(self, x, y, gammaPrime, S, C, sigma2, lambda0, Lambda, alpha, xi):
+    def __MStepVar(self, x, y, gammaPrime, S, C, sigma2, lambda0, Lambda, alpha, xi):
 
         #Initialize some values in order to start iterations
         prevSigma2 = 1
@@ -155,7 +155,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 #             Psi = self.__nearPSD(Psi) / Psi[0,0]
 
 #             num = 0
-#             for i in range(len(X)):
+#             for i in range(len(x)):
 #                 num += np.trace(np.linalg.lstsq(Psi, gamma[i].T)[0] @ np.linalg.lstsq(Sigma, gamma[i])[0])
 #             scale = num / den
 #             Sigma *= np.sqrt(scale)
@@ -175,6 +175,22 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         return Sigma, Psi, sigma2
 
     def fit(self, X, y):
+        '''
+        Fit to data.
+
+        State change:
+            Change state to "fitted"
+
+        Fits the transformer to `X`  and `y` and returns the fitted transformer.
+
+        Parameters
+        ----------
+        X : pandas DataFrame of shape (n_samples, n_features), where each element is a pandas Series indexed with the corresponding timepoints.
+            Input samples.
+
+        y : array-like of shape (n_samples,)
+            Target values
+        '''
 
         t, f, x = self.__preprocess(X)
 
@@ -197,8 +213,8 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
         #Compute spline and feature selection matrices S and C respectively
         self.CFull = np.eye(self.n_features)
-        S = np.zeros(len(X)).tolist()
-        C = np.zeros(len(X)).tolist()
+        S = np.zeros(len(x)).tolist()
+        C = np.zeros(len(x)).tolist()
         for i in range(len(f)):
             idx = np.array([]).astype('int')
             for j in f[i]:
@@ -219,7 +235,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         self.thetaPsi_ = rng.random((self.n_features, self.PsiRank))
         self.DSigma_ = rng.random(self.SigmaRank)
         self.DPsi_ = rng.random(self.PsiRank)
-        score = self.logLikelihood(t, f, x, y, self.lambda0_, self.Lambda_, self.alpha_, self.xi_, self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T, self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T, self.sigma2_) #Add a stopping criterion
+        score = self.__logLikelihood(t, f, x, y, self.lambda0_, self.Lambda_, self.alpha_, self.xi_, self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T, self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T, self.sigma2_) #Add a stopping criterion
 
         #Run the ECM algorithm for n_iter steps
         for iteration in range(self.n_iter):
@@ -229,13 +245,13 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
             #E-Step
             #TODO: If possible parallelize to run for all samples at the same time
             for i in range(len(x)):
-                gammaPrime.append(self.Estep(x[i], y[i], S[i], C[i]))
+                gammaPrime.append(self.__Estep(x[i], y[i], S[i], C[i]))
 
             #CM-Steps
-            lambda0, Lambda, alpha, xi = self.MStepLinear(x, y, m, gammaPrime, S, C)
-#             self.thetaSigma_, self.DSigma_, self.thetaPsi_, self.DPsi_, self.sigma2_ = self.MStepVar(x, y, gammaPrime, S, C, self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T, self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T, self.sigma2_)
+            lambda0, Lambda, alpha, xi = self.__MStepLinear(x, y, m, gammaPrime, S, C)
+#             self.thetaSigma_, self.DSigma_, self.thetaPsi_, self.DPsi_, self.sigma2_ = self.__MStepVar(x, y, gammaPrime, S, C, self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T, self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T, self.sigma2_)
 
-            Sigma, Psi, sigma2 = self.MStepVar(x, y, gammaPrime, S, C, self.sigma2_, lambda0, Lambda, alpha, xi)
+            Sigma, Psi, sigma2 = self.__MStepVar(x, y, gammaPrime, S, C, self.sigma2_, lambda0, Lambda, alpha, xi)
 
             #Compute the stopping criterion and stop if criterion is fulfilled
 #             if score > prevScore and iteration >= 5:
@@ -243,7 +259,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 #                 break
 
 #             print(score)
-            score = self.logLikelihood(t, f, x, y, lambda0, Lambda, alpha, xi, Sigma, Psi, sigma2)
+            score = self.__logLikelihood(t, f, x, y, lambda0, Lambda, alpha, xi, Sigma, Psi, sigma2)
             if score > prevScore and iteration > 1:
                 break
 
@@ -267,7 +283,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         return self
 
     #Stopping criterion
-    def logLikelihood(self, t, f, x, y, lambda0, Lambda, alpha, xi, Sigma, Psi, sigma2):
+    def __logLikelihood(self, t, f, x, y, lambda0, Lambda, alpha, xi, Sigma, Psi, sigma2):
         r = 0
         for i in range(len(x)):
             S = self.basis(t[i]).squeeze().T
@@ -279,17 +295,51 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
             r += currX @ np.linalg.lstsq(var, currX, rcond=None)[0] + np.linalg.slogdet(var)[1]
         return r/2
 
+    def getClassFunctionals(self, xs, className):
+
+        '''
+        Returns the multivariate class functionals evaluated at the given points.
+
+        Evaluates the mean functionals for class `className` at points `xs` and returns the resultant `len(xs) X n_features` matrix.
+
+        Parameters
+        ----------
+        xs : 1D array
+             List of points at which to evaluate the functionals
+
+        className : float, int or str
+                    Name of the class for which to evaluate the functional
+        '''
+
+        classIdx = np.where(self.classes_==className)[0][0]
+        S = self.basis(xs).squeeze().T
+        ys = S @ (self.lambda0_ + self.Lambda_ @ np.diag(self.alpha_[classIdx]) @ self.xi_)
+
+        return ys
+
+
     #Compute a low-dimensional representation of new data
     def transform(self, X):
 
+        '''
+        Transform `X` and return a transformed version.
+
+        State required:
+            Requires state to be "fitted".
+
+        Parameters
+        ----------
+
+        '''
+
         t, f, x = self.__preprocess(X)
-        Y = np.zeros((len(X), self.r * self.r)) #target low dimension matrix
+        Y = np.zeros((len(x), self.r * self.r)) #target low dimension matrix
 
         #Compute the variance parameters
         Sigma = self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T
         Psi = self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T
 
-        for i in range(len(X)):
+        for i in range(len(x)):
             #Compute S and C matrices
             S = self.basis(t[i]).squeeze().T
             idx = np.array([])
@@ -328,11 +378,11 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         #Compute partial log likelihood for new data
 
         t, f, x = self.__preprocess(X)
-        predProbs = np.zeros((len(X), self.n_classes))
+        predProbs = np.zeros((len(x), self.n_classes))
         Sigma = self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T
         Psi = self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T
 
-        for i in range(len(X)):
+        for i in range(len(x)):
 
             #Compute S and C matrices
             S = self.basis(t[i]).squeeze().T
@@ -379,12 +429,12 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
     def ic(self, X, y):
 
         if self.criterion != 'bic':
-            raise NotImplementedError
+            raise NotImplementedError('Only Bayesian Information Criterion has been implemented')
 
         t, f, x = self.__preprocess(X)
         for i in range(len(y)):
             y[i] = np.where(y[i] == self.classes_)[0][0]
-        l = self.logLikelihood(t, f, x, y)
+        l = self.__logLikelihood(t, f, x, y)
         numLinearParams = self.nBasis * self.r + self.r * self.n_classes + self.r * self.n_features
         numVarParams = (self.nBasis + 1) * self.SigmaRank + (self.n_features + 1) * self.PsiRank + 1
         return ((numLinearParams + numVarParams) * len(y) + 2 * l)
