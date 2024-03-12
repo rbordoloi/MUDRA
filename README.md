@@ -25,8 +25,7 @@ The class *MUDRA* is defined like a scikit-learn module, that is
 from MUDRA import MUDRA
 ```
 
-The model accepts input `X` as a pandas DataFrame of shape `(n_samples, n_features)` and `y` as list of class labels. Each 
-
+The model accepts input `X` as a pandas DataFrame of shape `(n_samples, n_features)` and `y` as list of class labels. Each cell of the DataFrame has a pandas Series object corresponding to the time series for one feature of one sample. Each Series object is indexed by the time points for which observations were recorded. Missing features are denoted by `np.nan` objects.
 - To fit the model on training data (X,y) (for r=8, b=9 and 300 iterations for the last optimization step):
 
 ```python
