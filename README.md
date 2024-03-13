@@ -15,6 +15,8 @@ cond env create --name mudra --file=environment.yml
 python setup.py install --user
 ```
 
+The sample dataset is included in the `datasets` directory. To regenerate the dataset from the original source, run `datasetGeneration.py`.
+
 ## Example
 
 The class *MUDRA* is defined like a scikit-learn module, that is
@@ -56,7 +58,7 @@ Please check out the interactive Jupyter notebooks "*synthetic.ipynb*" and "*rea
 
 ```bash
 jupyter notebook real.ipynb
-jupyter notebook synthetic.ipynb 
+jupyter notebook synthetic.ipynb
 ```
 
 ## Citations
@@ -65,7 +67,7 @@ If you use *MUDRA* in academic research, please cite it as follows
 
 ```
 @misc{bordoloi2024multivariate,
-      title={Multivariate Functional Linear Discriminant Analysis for the Classification of Short Time Series with Missing Data}, 
+      title={Multivariate Functional Linear Discriminant Analysis for the Classification of Short Time Series with Missing Data},
       author={Rahul Bordoloi and Clémence Réda and Orell Trautmann and Saptarshi Bej and Olaf Wolkenhauer},
       year={2024},
       eprint={2402.13103},
