@@ -1,4 +1,6 @@
 # Source Code for the Paper "Multivariate Functional Linear Discriminant Analysis (MUDRA) for the Classification of Short Time Series with Missing Data"
+ 
+ [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/multivariate-functional-linear-discriminant/time-series-classification-on-2)](https://paperswithcode.com/sota/time-series-classification-on-2?p=multivariate-functional-linear-discriminant)
 
 ## Installation
 
