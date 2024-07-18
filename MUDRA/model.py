@@ -13,7 +13,7 @@ import numpy as np
 import tensorly as tf
 from pandas import DataFrame
 from skfda.representation.basis import BSplineBasis
-from scipy.linalg import solve_sylvester, sqrtm
+from scipy.linalg import solve_sylvester, sqrtm, solve_triangular
 from scipy.sparse.linalg import LinearOperator, gmres
 from scipy.special import softmax
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
@@ -45,6 +45,12 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         D = np.clip(D, 0, np.inf)
         return Q @ np.diag(D) @ Q.T
 
+    def __inverse_quadratic(self, A, x):
+
+        L = np.linalg.cholesky(A)
+        y = solve_triangular(L, x, lower=True)
+        return np.matmul(y.T, y)
+
     def __preprocess(self, X):
 
         t, f, x = [], [], []
@@ -70,7 +76,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         centeredX = (x - S @ beta @ C) @ PsiPrime.T
 
         #Solve the Sylvester equation
-        gamma = solve_sylvester(self.sigma2_ * np.linalg.pinv(SigmaPrime), PsiPrime.T, centeredX)
+        gamma = solve_sylvester(self.sigma2_ * np.linalg.pinv(np.atleast_2d(SigmaPrime)), np.atleast_2d(PsiPrime).T, centeredX)
         gamma = np.array(gamma)
 
         return gamma
@@ -87,7 +93,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
             s = np.zeros((self.nBasis, self.n_features))
             impIdxs = np.where(y == target)[0] #Choose samples belonging to the current class
             for i in impIdxs:
-                s += S[i].T @ S[i] @ v @ C[i] @ C[i].T #Multiply and add the corresponding S and C matrices
+                s += np.atleast_2d(S[i]).T @ np.atleast_2d(S[i]) @ v @ np.atleast_2d(C[i]) @ np.atleast_2d(C[i]).T #Multiply and add the corresponding S and C matrices
             s = s.T.flatten()
             return s
 
@@ -96,7 +102,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         b = np.zeros((self.n_classes, self.nBasis, self.n_features))
         for i in range(len(x)):
             centeredX = x[i] - gammaPrime[i]
-            b[y[i]] += S[i].T @ centeredX @ C[i].T
+            b[y[i]] += np.atleast_2d(S[i]).T @ centeredX @ np.atleast_2d(C[i]).T
         beta = [gmres(A[i], b[i].T.flatten())[0].reshape(self.n_features, self.nBasis).T for i in range(self.n_classes)]
         lambda0 = np.average(beta, axis=0, weights=m) #Compute lambda0 by weighted average
         beta -= lambda0 #De-mean beta by subtracting lambda0
@@ -127,8 +133,8 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
         #Compute gammas to be used for computing Sigma and Psi
         for i in range(len(gammaPrime)):
-            tmp = np.linalg.lstsq(C[i].T, gammaPrime[i].T, rcond=None)[0].T
-            gamma[i] = np.linalg.lstsq(S[i], tmp, rcond=None)[0]
+            tmp = np.linalg.lstsq(np.atleast_2d(C[i]).T, gammaPrime[i].T, rcond=None)[0].T
+            gamma[i] = np.linalg.lstsq(np.atleast_2d(S[i]), tmp, rcond=None)[0]
             t += x[i].shape[0]
             f += x[i].shape[1]
             den += x[i].flatten().shape[0]
@@ -144,13 +150,15 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
             PsiNew = np.zeros((self.n_features, self.n_features))
             for i in range(len(x)):
 #                 SigmaNew += gamma[i] @ np.linalg.lstsq(Psi + self.regularizer * np.eye(self.n_features), gamma[i].T)[0]
-                SigmaNew += gamma[i] @ np.linalg.lstsq(Psi, gamma[i].T, rcond=1)[0]
+                # SigmaNew += gamma[i] @ np.linalg.lstsq(Psi, gamma[i].T, rcond=1)[0]
+                SigmaNew += self.__inverse_quadratic(Psi, gamma[i].T)
             Sigma = self.__nearPSD(SigmaNew / f)
 #             Sigma = self.__nearPSD(Sigma) / Sigma[0,0]
 
             for i in range(len(x)):
 #                 PsiNew += gamma[i].T @ np.linalg.lstsq(Sigma + self.regularizer * np.eye(self.nBasis), gamma[i])[0]
-                PsiNew += gamma[i].T @ np.linalg.lstsq(Sigma, gamma[i], rcond=1)[0]
+                # PsiNew += gamma[i].T @ np.linalg.lstsq(Sigma, gamma[i], rcond=1)[0]
+                PsiNew += self.__inverse_quadratic(Sigma, gamma[i])
             Psi = self.__nearPSD(PsiNew / t)
 #             Psi = self.__nearPSD(Psi) / Psi[0,0]
 
@@ -164,7 +172,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
             #Compute sigma2
             num = 0
             for i in range(len(x)):
-                num += np.linalg.norm(x[i] - S[i] @ (lambda0 + Lambda @ np.diag(alpha[y[i]]) @ xi) @ C[i] - gammaPrime[i]) + np.trace(C[i].T @ Psi @ C[i]) * np.trace(S[i] @ Sigma @ S[i].T)
+                num += np.linalg.norm(x[i] - np.atleast_2d(S[i]) @ (lambda0 + Lambda @ np.diag(alpha[y[i]]) @ xi) @ np.atleast_2d(C[i]) - gammaPrime[i]) + np.trace(np.atleast_2d(C[i]).T @ Psi @ np.atleast_2d(C[i])) * np.trace(np.atleast_2d(S[i]) @ Sigma @ np.atleast_2d(S[i]).T)
 #                 den += x[i].shape[0] * x[i].shape[1]
             sigma2 = np.clip(num / den, 1e-5, 1e5) #Ensure sigma2 is not too small or too big
             currIter += 1
@@ -240,7 +248,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         self.thetaPsi_ = rng.random((self.n_features, self.PsiRank))
         self.DSigma_ = rng.random(self.SigmaRank)
         self.DPsi_ = rng.random(self.PsiRank)
-        score = self.__logLikelihood(t, f, x, y, self.lambda0_, self.Lambda_, self.alpha_, self.xi_, self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T, self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T, self.sigma2_) #Add a stopping criterion
+        score = self.__logLikelihood(t, f, x, y, self.lambda0_, self.Lambda_, self.alpha_, self.xi_, self.thetaSigma_ @ np.diag(self.DSigma_) @ self.thetaSigma_.T, self.thetaPsi_ @ np.diag(self.DPsi_) @ self.thetaPsi_.T, self.sigma2_, S, C) #Add a stopping criterion
 
         #Run the ECM algorithm for n_iter steps
         for iteration in range(self.n_iter):
@@ -264,7 +272,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 #                 break
 
 #             print(score)
-            score = self.__logLikelihood(t, f, x, y, lambda0, Lambda, alpha, xi, Sigma, Psi, sigma2)
+            score = self.__logLikelihood(t, f, x, y, lambda0, Lambda, alpha, xi, Sigma, Psi, sigma2, S, C)
             if score > prevScore and iteration > 1:
                 break
 
@@ -288,16 +296,15 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
         return self
 
     #Stopping criterion
-    def __logLikelihood(self, t, f, x, y, lambda0, Lambda, alpha, xi, Sigma, Psi, sigma2):
+    def __logLikelihood(self, t, f, x, y, lambda0, Lambda, alpha, xi, Sigma, Psi, sigma2, S, C):
         r = 0
         for i in range(len(x)):
-            S = self.basis(t[i]).squeeze().T
-            C = self.CFull[:,f[i].astype('int')]
-            SigmaPrime = S @ Sigma @ S.T
-            PsiPrime = C.T @ Psi @ C
-            currX = (x[i] - S @ (lambda0 + Lambda @ np.diag(alpha[y[i]]) @ xi) @ C).T.flatten()
-            var = sigma2 * np.eye(t[i].shape[0] * f[i].shape[0]) + np.kron(PsiPrime, SigmaPrime)
-            r += currX @ np.linalg.lstsq(var, currX, rcond=None)[0] + np.linalg.slogdet(var)[1]
+            SigmaPrime = S[i] @ Sigma @ S[i].T
+            PsiPrime = C[i].T @ Psi @ C[i]
+            currX = (x[i] - S[i] @ (lambda0 + Lambda @ np.diag(alpha[y[i]]) @ xi) @ C[i]).T.flatten()
+            var = self.__nearPSD(sigma2 * np.eye(t[i].shape[0] * f[i].shape[0]) + np.kron(PsiPrime, SigmaPrime))
+            # r += currX @ np.linalg.lstsq(var, currX, rcond=None)[0] + np.linalg.slogdet(var)[1]
+            r += self.__inverse_quadratic(var, currX) + np.linalg.slogdet(var)[1]
         return r/2
 
     def getClassFunctionals(self, xs, className):
@@ -357,12 +364,12 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
         for i in range(len(x)):
             #Compute S and C matrices
-            S = self.basis(t[i]).squeeze().T
+            S = np.atleast_2d(self.basis(t[i]).squeeze().T)
             idx = np.array([])
             for j in f[i]:
                 idx = np.append(idx, np.where(self.features_ == j)).astype('int')
             idx.sort()
-            C = self.CFull[:,np.atleast_1d(idx)]
+            C = np.atleast_2d(self.CFull[:,np.atleast_1d(idx)])
 
             #Compute variances for the current sample
             SigmaPrime = np.atleast_2d(S @ Sigma @ S.T)
@@ -374,9 +381,10 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
             centeredX = np.linalg.lstsq(PsiPrime, centeredX.T, rcond=None)[0].T
             centeredX = solve_sylvester(SigmaPrime, self.sigma2_ * np.linalg.pinv(PsiPrime).T, centeredX)
             centeredX = self.Lambda_.T @ S.T @ centeredX @ C.T @ self.xi_.T
-            M = self.sigma2_ * np.eye(t[i].shape[0] * f[i].shape[0]) + np.kron(PsiPrime, SigmaPrime)
+            M = self.__nearPSD(self.sigma2_ * np.eye(t[i].shape[0] * f[i].shape[0]) + np.kron(PsiPrime, SigmaPrime))
             A = np.kron(C.T @ self.xi_.T, S @ self.Lambda_)
-            var = A.T @ np.linalg.lstsq(M, A, rcond=None)[0]
+            # var = A.T @ np.linalg.lstsq(M, A, rcond=None)[0]
+            var = self.__inverse_quadratic(M, A)
             alpha = np.linalg.lstsq(sqrtm(var), centeredX.T.flatten(), rcond=None)[0]
             Y[i] = alpha
 #             Y[i] = np.diag(alpha.reshape(self.r, self.r).T) #Add it to Y
