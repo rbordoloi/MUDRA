@@ -47,7 +47,7 @@ class MUDRA(BaseEstimator, TransformerMixin, ClassifierMixin):
 
     def __inverse_quadratic(self, A, x):
 
-        L = np.linalg.cholesky(A)
+        L = np.linalg.cholesky(A + 1e-5 * np.eye(A.shape[0]))
         y = solve_triangular(L, x, lower=True)
         return np.matmul(y.T, y)
 
