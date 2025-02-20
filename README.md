@@ -68,13 +68,15 @@ jupyter notebook synthetic.ipynb
 If you use *MUDRA* in academic research, please cite it as follows
 
 ```
-@misc{bordoloi2024multivariate,
-      title={Multivariate Functional Linear Discriminant Analysis for the Classification of Short Time Series with Missing Data},
-      author={Rahul Bordoloi and Clémence Réda and Orell Trautmann and Saptarshi Bej and Olaf Wolkenhauer},
-      year={2024},
-      eprint={2402.13103},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@article{bordoloi2025multivariate,
+  title={Multivariate functional linear discriminant analysis for partially-observed time series},
+  author={Bordoloi, Rahul and R{\'e}da, Cl{\'e}mence and Trautmann, Orell and Bej, Saptarshi and Wolkenhauer, Olaf},
+  journal={Machine Learning},
+  volume={114},
+  number={3},
+  pages={80},
+  year={2025},
+  publisher={Springer}
 }
 
 ```
