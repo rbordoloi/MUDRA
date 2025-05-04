@@ -1,26 +1,53 @@
-cff-version: "1.0.0"
-authors:
-- family-names: Bordoloi
-  given-names: Rahul
-message: If you use this software, please cite our preprint.
+cff-version: 1.2.0
+message: Please cite the following works when using this software.
 preferred-citation:
+  abstract: >-
+    The more extensive access to time-series data, especially for biomedical
+    purposes, raises new methodological challenges, particularly regarding
+    missing values. Functional linear discriminant analysis (FLDA) extends
+    Linear Discriminant Analysis (LDA)-mediated multiclass classification and
+    dimension reduction to data in the form of fragmented observations of a
+    univariate function. For large multivariate and partially-observed data,
+    there are two challenges: (i) statistical dependencies between different
+    components of a multivariate function and (ii) heterogeneous sampling times
+    with missing features. We here develop a multivariate version of FLDA,
+    called MUDRA, to tackle these challenges and describe a computationally
+    efficient expectation/conditional-maximisation (ECM) algorithm to infer its
+    parameters without any tensor inversions. We assess its predictive power on
+    the “Articulary Words” dataset and show its improvement over the
+    state-of-the-art, especially in the case of missing data. This advancement
+    in dimension reduction of multivariate functional data holds promise for
+    enhancing classification accuracy in scenarios like partially observed short
+    multivariate time series analysis.
   authors:
-  - family-names: Bordoloi
-    given-names: Rahul
-    orcid: "https://orcid.org/0009-0008-6453-7620"
-  - family-names: Réda
-    given-names: Clémence
-    orcid: "https://orcid.org/0000-0003-3238-0258"
-  - family-names: Trautmann
-    given-names: Orell
-  - family-names: Bej
-    given-names: Saptarshi
-    orcid: "https://orcid.org/0000-0003-1835-6139"
-  - family-names: Wolkenhauer
-    given-names: Olaf
-    orcid: "https://orcid.org/0000-0001-6105-2937"
-  title: "Multivariate Functional Linear Discriminant Analysis (MUDRA) 
-    for the Classification of Short Time Series with Missing Data"
-  type: unpublished
-title: "Multivariate Functional Linear Discriminant Analysis (MUDRA) 
-  for the Classification of Short Time Series with Missing Data"
+    - family-names: Bordoloi
+      given-names: Rahul
+    - family-names: Réda
+      given-names: Clémence
+    - family-names: Trautmann
+      given-names: Orell
+    - family-names: Bej
+      given-names: Saptarshi
+    - family-names: Wolkenhauer
+      given-names: Olaf
+  doi: 10.1007/s10994-025-06741-0
+  identifiers:
+    - type: doi
+      value: 10.1007/s10994-025-06741-0
+    - type: url
+      value: https://doi.org/10.1007/s10994-025-06741-0
+    - type: other
+      value: urn:issn:1573-0565
+  title: >-
+    Multivariate functional linear discriminant analysis for partially-observed
+    time series
+  url: https://doi.org/10.1007/s10994-025-06741-0
+  date-published: 2025-02-11
+  year: 2025
+  month: 2
+  issn: 1573-0565
+  issue: '3'
+  journal: Machine Learning
+  start: '80'
+  type: article
+  volume: '114'
